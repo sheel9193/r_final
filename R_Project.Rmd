@@ -1,0 +1,483 @@
+---
+title: "R Project"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code.
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*.
+
+```{r}
+trains <- read_csv("train.csv")
+test <- read_csv("test.csv")
+
+
+```
+
+```{r}
+library(dplyr)
+library(readr)
+library(tidyverse)
+library(stringr)
+options(repr.plot.width = 14, repr.plot.height = 8)
+options(warn=-1)
+
+```
+
+```{r}
+train <- read_csv("train.csv")
+test <- read_csv("test.csv")
+
+```
+
+```{r}
+test["Transported"] <- NA
+all_data <- rbind(train,test)
+all_data[all_data == ""] <- NA
+
+
+```
+
+```{r}
+head(all_data)
+```
+
+```{r}
+all_data <- all_data %>%
+  separate(PassengerId, c("travel_group", "num_in_group"))
+
+length(unique(all_data$travel_group))
+
+```
+
+```{r}
+all_data %>%
+  ggplot(aes(HomePlanet,))+
+  geom_bar(fill="#006a6a")+
+  geom_text(stat = 'count', aes(label=..count..), vjust=0)+
+  ggtitle("Count of Passengers per HomePlanet") +
+  labs(y = "Count of Passengers", x= "HomePlanet")+
+  theme(plot.background = element_rect(fill = "#FFFCF6"),
+        panel.background = element_rect(fill = "#FFFCF6"),
+        plot.title = element_text(hjust = 1))
+```
+
+```{r}
+all_data %>% filter(!is.na(HomePlanet) & !is.na(Destination)) %>%
+  ggplot(aes(HomePlanet))+
+  geom_bar(aes(fill = interaction(Destination)), position = "dodge")+
+  ggtitle("Count of Passengers per HomePlanet") +
+  labs(y = "Count of Passengers", x= "HomePlanet")+
+  theme(plot.background = element_rect(fill = "#FFFCF6"),
+        panel.background = element_rect(fill = "#FFFCF6"),
+        plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+all_data %>%
+  ggplot(aes(CryoSleep))+
+  geom_bar(fill="#006a6a")+
+  geom_text(stat = 'count', aes(label=..count..), vjust=0)+
+  ggtitle("Count of Passengers by Value of CryoSleep") +
+  labs(y = "Count of Passengers", x= "CryoSleep")+
+  theme(plot.background = element_rect(fill = "#FFFCF6"),
+        panel.background = element_rect(fill = "#FFFCF6"),
+        plot.title = element_text(hjust = 0.5))
+              
+```
+
+```{r}
+all_data <- all_data %>% separate(Cabin, c("deck","num","side"))
+```
+
+```{r}
+all_data %>%
+  ggplot(aes(deck))+
+  geom_bar(fill="#006a6a")+
+  geom_text(stat = 'count', aes(label=..count..), vjust=0)+
+  ggtitle("Count of Passengers per Deck") +
+  labs(y = "Count of Passengers", x= "Deck")+
+  theme(plot.background = element_rect(fill = "#FFFCF6"),
+        panel.background = element_rect(fill = "#FFFCF6"),
+        plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+length(unique(all_data$num))
+```
+
+```{r}
+all_data %>%
+  ggplot(aes(side))+
+  geom_bar(fill="#006a6a")+
+  geom_text(stat = 'count', aes(label=..count..), vjust=0)+
+  ggtitle("Count of Passengers per Side") +
+  labs(y = "Count of Passengers", x= "Side")+
+  theme(plot.background = element_rect(fill = "#FFFCF6"),
+        panel.background = element_rect(fill = "#FFFCF6"),
+        plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+all_data %>%
+  ggplot(aes(Destination))+
+  geom_bar(fill="#006a6a")+
+  geom_text(stat = 'count', aes(label=..count..), vjust=0)+
+  ggtitle("Count of Passengers per Destination") +
+  labs(y = "Count of Passengers", x= "Destination")+
+  theme(plot.background = element_rect(fill = "#FFFCF6"),
+        panel.background = element_rect(fill = "#FFFCF6"),
+        plot.title = element_text(hjust = 0.5))
+
+```
+
+```{r}
+all_data %>%
+  na.omit() %>%
+  ggplot(aes(Age))+
+  geom_bar(fill="#006a6a", width = 0.8)+
+  ggtitle("Count of Passengers by Age") +
+  labs(y = "Count of Passengers", x= "Age")+
+  theme(plot.background = element_rect(fill = "#FFFCF6"),
+        panel.background = element_rect(fill = "#FFFCF6"),
+        plot.title = element_text(hjust = 0.5))
+
+```
+
+```{r}
+all_data %>%
+  ggplot(aes(VIP))+
+  geom_bar(fill="#006a6a")+
+  geom_text(stat = 'count', aes(label=..count..), vjust=0)+
+  ggtitle("Count of Passengers by Age") +
+  labs(y = "Count of Passengers", x= "Age")+
+  theme(plot.background = element_rect(fill = "#FFFCF6"),
+        panel.background = element_rect(fill = "#FFFCF6"),
+        plot.title = element_text(hjust = 0.5))
+```
+
+```         
+```
+
+```{r}
+
+features <- c("RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck")
+
+percentage_of_paying <- numeric(length(features))
+percentage_of_not_paying <- numeric(length(features))
+
+for (i in 1:length(features)) {
+  feature <- features[i]
+  total <- nrow(all_data)
+  paying <- sum(all_data[[feature]] != 0, na.rm = TRUE)
+  not_paying <- total - paying
+  
+  percentage_of_paying[i] <- 100 * paying / total
+  percentage_of_not_paying[i] <- 100 * not_paying / total
+}
+
+result <- tibble(
+  names = features,
+  percentage_of_paying = sprintf("%0.1f", percentage_of_paying),
+  percentage_of_not_paying = sprintf("%0.1f", percentage_of_not_paying)
+)
+
+print(result)
+```
+
+```{r}
+all_data <- all_data %>% separate(Name, c("First", "Last"))
+```
+
+```{r}
+length(unique(all_data$Last))
+
+```
+
+```{r}
+all_data %>% filter(!is.na(deck)) %>%
+  ggplot(aes(deck))+
+  geom_bar(aes(fill = interaction(HomePlanet)), position ='dodge')+
+  ggtitle("Count of Passengers per Deck group by HomePlanet") +
+  labs(y = "Count of Passengers", x= "Deck")+
+  theme(plot.background = element_rect(fill = "#FFFCF6"),
+        panel.background = element_rect(fill = "#FFFCF6"),
+        plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+all_data$HomePlanet[all_data$deck =="G" & is.na(all_data$HomePlanet)] <- "Earth"
+all_data$HomePlanet[all_data$deck %in% c("A", "B", "C", "T") & is.na(all_data$HomePlanet)] <- "Europa"
+sum(is.na(all_data$HomePlanet))
+
+```
+
+```{r}
+earth_names <- all_data %>% 
+  filter(HomePlanet == "Earth") %>%
+  distinct(Last) %>%
+  pull()
+
+mars_names <- all_data %>% 
+  filter(HomePlanet == "Mars") %>%
+  distinct(Last) %>%
+  pull()
+
+europa_names <- all_data %>% 
+  filter(HomePlanet == "Europa") %>%
+  distinct(Last) %>%
+  pull()
+
+intersection_earth_mars <- intersect(earth_names, mars_names)
+intersection_earth_europa <- intersect(earth_names, europa_names)
+intersection_mars_europa <- intersect(mars_names, europa_names)
+
+intersection_earth_mars
+intersection_earth_europa
+intersection_mars_europa
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click t
+
+```{r}
+all_data <- all_data %>%
+  mutate(
+    HomePlanet = case_when(
+      HomePlanet == "Earth" | (Last %in% earth_names & is.na(HomePlanet)) ~ "Earth",
+      HomePlanet == "Mars" | (Last %in% mars_names & is.na(HomePlanet)) ~ "Mars",
+      HomePlanet == "Europa" | (Last %in% europa_names & is.na(HomePlanet)) ~ "Europa",
+      TRUE ~ HomePlanet
+    )
+  )
+
+sum(is.na(all_data$HomePlanet))
+```
+
+```{r}
+all_data$HomePlanet[is.na(all_data$HomePlanet)] <- "Earth"
+```
+
+```{r}
+rm(earth_names,mars_names,europa_names)
+```
+
+```{r}
+sum(is.na(all_data$CryoSleep))
+```
+
+```{r}
+all_data %>% filter(RoomService ==0 & FoodCourt==0 & ShoppingMall ==0& Spa==0 & VRDeck==0) %>%
+summarize(t = sum(CryoSleep=="True", na.rm=TRUE), f = sum(CryoSleep=="False", na.rm=TRUE))
+```
+
+```{r}
+all_data %>% filter(RoomService ==0 & FoodCourt==0 & ShoppingMall ==0& Spa==0 & VRDeck==0 & Age >12 ) %>%
+summarize(t = sum(CryoSleep=="True", na.rm=TRUE), f = sum(CryoSleep=="False", na.rm=TRUE))
+```
+
+```{r}
+all_data$CryoSleep[all_data$RoomService %in% c(NA, 0) &
+                     all_data$FoodCourt %in% c(NA, 0) &
+                     all_data$ShoppingMall %in% c(NA, 0) &
+                     all_data$Spa %in% c(NA, 0) &
+                     all_data$VRDeck %in% c(NA, 0) &
+                     all_data$Age >12 &
+                     is.na(all_data$CryoSleep)] <- "True"
+
+sum(is.na(all_data$CryoSleep))
+```
+
+```{r}
+all_data %>% filter(!is.na(deck) & !is.na(Destination)) %>%
+  ggplot(aes(HomePlanet))+
+  geom_bar(aes(fill = interaction(deck)), position ='dodge')+
+  facet_wrap(~Destination)+
+  labs(y = "Count of Passengers", x= "HomePlanet")+
+  theme(plot.background = element_rect(fill = "#FFFCF6"),
+        panel.background = element_rect(fill = "#FFFCF6"),
+        plot.title = element_text(hjust = 0.5))
+
+```
+
+```{r}
+all_data %>%
+  filter(!is.na(Destination)) %>%
+  group_by(HomePlanet, Destination) %>%
+  summarize(
+    deck = as.factor(names(which.max(table(deck)))),
+    .groups = 'drop'
+  )
+```
+
+```{r}
+all_data$deck[is.na(all_data$deck) & all_data$HomePlanet =="Earth"] <-  "G"
+all_data$deck[is.na(all_data$deck) & all_data$HomePlanet =="Mars"] <- "F"
+all_data$deck[is.na(all_data$deck) & all_data$HomePlanet =="Europa" &
+                all_data$Destination == "PSO J318.5-22"] <- "C"
+all_data$deck[is.na(all_data$deck) & all_data$HomePlanet =="Europa" &
+                all_data$Destination != "PSO J318.5-22"] <- "B"
+```
+
+```{r}
+sum(is.na(all_data$side))
+```
+
+```{r}
+
+p_side_groups <- all_data %>%
+  filter(side == "P") %>%
+  pull(travel_group)
+
+s_side_groups <- all_data %>%
+  filter(side == "S") %>%
+  pull(travel_group)
+
+nrow(intersect(p_side_groups, s_side_groups))
+```
+
+```{r}
+all_data$side[is.na(all_data$side)] <- "N"
+```
+
+```{r}
+all_data %>% filter( !is.na(Destination)) %>%
+  ggplot(aes(HomePlanet))+
+  geom_bar(aes(fill = interaction(Destination)), position ='dodge')+
+  facet_wrap(~deck)+
+  labs(y = "Count of Passengers", x= "HomePlanet")+
+  theme(plot.background = element_rect(fill = "#FFFCF6"),
+        panel.background = element_rect(fill = "#FFFCF6"),
+        plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+all_data$Destination[is.na(all_data$Destination)] <- "TRAPPIST-1e"
+```
+
+```{r}
+all_data <- all_data %>%
+  group_by(HomePlanet, deck, side, Destination) %>%
+  summarize(
+    cryosleep = names(which.max(table(as.factor(CryoSleep)))),
+    .groups = 'drop'
+  ) %>%
+  left_join(all_data, by = c("HomePlanet", "deck", "side", "Destination"))
+
+```
+
+```{r}
+s <- all_data %>% filter(!is.na(CryoSleep))
+
+sum(s$CryoSleep == s$cryosleep)/nrow(s)
+sum(s$CryoSleep=="False")/nrow(s)
+```
+
+```{r}
+all_data <- all_data %>% mutate(CryoSleep = 
+                      ifelse(is.na(CryoSleep), cryosleep, CryoSleep)) %>% select(-cryosleep)
+rm(s, cryosleep)
+```
+
+```{r}
+all_data$Age[is.na(all_data$Age)] <- median(all_data$Age, na.rm=TRUE)
+```
+
+```{r}
+all_data %>% filter(VIP=="False") %>% nrow()/nrow(all_data)
+```
+
+```{r}
+all_data$VIP[is.na(all_data$VIP)] <- "False"
+```
+
+```{r}
+costs_by_Age <- 
+  all_data %>% filter(!is.na(Age)) %>% group_by(Age) %>%
+  summarize(costs  = sum(RoomService + FoodCourt +
+                           ShoppingMall+ Spa + VRDeck, na.rm=TRUE))
+
+costs_by_Age %>% ggplot(aes(Age, costs)) +
+  geom_point(color="#006a6a")+
+  ggtitle("Sum of Costs per Age") +
+  labs(y = "Sum of costs", x= "Age")+
+  theme(plot.background = element_rect(fill = "#FFFCF6"),
+        panel.background = element_rect(fill = "#FFFCF6"),
+        plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+all_data$RoomService[all_data$Age < 13] <- 0
+all_data$FoodCourt[all_data$Age < 13] <- 0
+all_data$ShoppingMall[all_data$Age < 13] <- 0
+all_data$Spa[all_data$Age < 13] <- 0
+all_data$VRDeck[all_data$Age < 13] <- 0
+```
+
+```{r}
+all_data  %>% group_by(CryoSleep) %>%
+  summarize(costs  = median(RoomService + FoodCourt +
+                           ShoppingMall+ Spa + VRDeck, na.rm=TRUE))
+```
+
+```{r}
+all_data$RoomService[all_data$CryoSleep =="True" & is.na(all_data$RoomService)] <- 0
+all_data$FoodCourt[all_data$CryoSleep =="True" & is.na(all_data$FoodCourt)] <- 0
+all_data$ShoppingMall[all_data$CryoSleep =="True" & is.na(all_data$ShoppingMall)] <- 0
+all_data$Spa[all_data$CryoSleep =="True" & is.na(all_data$Spa)] <- 0
+all_data$VRDeck[all_data$CryoSleep =="True" & is.na(all_data$VRDeck)] <- 0
+```
+
+```{r}
+all_data$RoomService[is.na(all_data$RoomService)] <- 
+  median(all_data$RoomService[all_data$CryoSleep == "False" & all_data$Age > 12], na.rm=TRUE)
+
+all_data$FoodCourt[is.na(all_data$FoodCourt)] <- 
+  median(all_data$FoodCourt[all_data$CryoSleep == "False" & all_data$Age > 12], na.rm=TRUE)
+
+all_data$ShoppingMall[is.na(all_data$ShoppingMall)] <- 
+  median(all_data$ShoppingMall[all_data$CryoSleep == "False" & all_data$Age > 12], na.rm=TRUE)
+
+all_data$Spa[is.na(all_data$Spa)] <- 
+  median(all_data$Spa[all_data$CryoSleep == "False" & all_data$Age > 12], na.rm=TRUE)
+
+all_data$VRDeck[is.na(all_data$VRDeck)] <- 
+  median(all_data$VRDeck[all_data$CryoSleep == "False" & all_data$Age > 12], na.rm=TRUE)
+```
+
+```{r}
+train_index <- which(!is.na(all_data$Transported))
+train_set <- all_data[train_index,]
+test_set <- all_data[-train_index,]
+
+c(nrow(train_set), nrow(test_set))
+```
+
+```{r}
+# Cabin variable by combining deck and side
+train_set$Cabin <- paste(train_set$deck, train_set$side, sep = "")
+
+# Set the random seed for reproducibility
+set.seed(5)
+
+# number of rows in the dataset
+n <- nrow(train_set)
+
+# number of rows for the training set
+train_size <- floor(0.85 * n)
+
+# random indices for splitting
+random_indices <- sample(1:n, n)
+
+# Splitting the data into training and validation sets
+train_indices <- random_indices[1:train_size]
+validation_indices <- random_indices[(train_size + 1):n]
+
+train_to_valid_set <- train_set[train_indices, ]
+validation_set <- train_set[validation_indices, ]
+```
+
+he *Preview* button or press *Cmd+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
